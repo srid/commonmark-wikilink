@@ -83,4 +83,4 @@ common shared
 
 library
   import:          shared
-  exposed-modules: Commonmark.Extensions.Wikilink
+  exposed-modules: Commonmark.Extensions.WikiLink
