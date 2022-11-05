@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveAnyClass #-}
 
-module Commonmark.Extensions.Wikilink (
+module Commonmark.Extensions.WikiLink (
   -- * Types
   WikiLink,
   WikiLinkType (..),
