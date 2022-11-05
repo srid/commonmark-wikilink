@@ -6,17 +6,9 @@ copyright:          2022 Sridhar Ratnakumar
 maintainer:         srid@srid.ca
 author:             Sridhar Ratnakumar
 category:           Web
-
--- TODO: Before hackage release.
--- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
-
--- A URL where users can report bugs.
--- bug-reports:
-
+synopsis:           Obsidian-friendly commonmark wikilink parser
+description:        Obsidian-friendly commonmark wikilink parser
+bug-reports:        https://github.com/srid/commonmark-wikilink
 extra-source-files:
   LICENSE
   README.md
@@ -75,22 +67,20 @@ common shared
 
   build-depends:
     , aeson
-    , async
-    , base          >=4.13.0.0 && <4.18.0.0.0
-    , data-default
-    , directory
-    , filepath
-    , mtl
-    , optics-core
-    , profunctors
-    , relude        >=1.0
-    , shower
-    , time
-    , with-utf8
+    , base               >=4.13.0.0 && <4.18.0.0.0
+    , commonmark
+    , commonmark-pandoc
+    , megaparsec
+    , network-uri
+    , pandoc-types
+    , parsec
+    , relude             >=1.0
+    , uri-encode
+    , url-slug
 
   hs-source-dirs:     src
   default-language:   Haskell2010
 
-executable commonmark-wikilink
-  import:  shared
-  main-is: Main.hs
+library
+  import:          shared
+  exposed-modules: Commonmark.Extensions.Wikilink
