@@ -1,5 +1,5 @@
 cabal-version:      2.4
-name:               haskell-template
+name:               commonmark-wikilink
 version:            0.1.0.0
 license:            MIT
 copyright:          2022 Sridhar Ratnakumar
@@ -91,6 +91,6 @@ common shared
   hs-source-dirs:     src
   default-language:   Haskell2010
 
-executable haskell-template
+executable commonmark-wikilink
   import:  shared
   main-is: Main.hs
