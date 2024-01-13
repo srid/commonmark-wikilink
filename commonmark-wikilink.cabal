@@ -25,7 +25,6 @@ common shared
     relude
 
   default-extensions:
-    NoStarIsType
     BangPatterns
     ConstraintKinds
     DataKinds
@@ -51,6 +50,7 @@ common shared
     LambdaCase
     MultiParamTypeClasses
     MultiWayIf
+    NoStarIsType
     NumericUnderscores
     OverloadedStrings
     PolyKinds
