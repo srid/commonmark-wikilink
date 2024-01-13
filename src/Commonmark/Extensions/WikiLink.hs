@@ -163,9 +163,15 @@ allowedWikiLinks indexIsSpecial slugs' =
       typs :: NonEmpty WikiLinkType = NE.fromList universe
    in liftM2 (,) typs wls
   where
-    slugs = if indexIsSpecial && last slugs' == "index" then NE.fromList . init $ slugs' else slugs'
+    slugs = fromMaybe slugs' $ do
+      guard indexIsSpecial
+      guard $ last slugs' == "index"
+      slugsParent slugs'
     tailsNE =
       NE.fromList . mapMaybe nonEmpty . tails . toList
+
+slugsParent :: NonEmpty Slug -> Maybe (NonEmpty Slug)
+slugsParent = nonEmpty . init
 
 -------------------------
 -- Parser
