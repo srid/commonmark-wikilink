@@ -153,13 +153,17 @@ wikiLinkInlineRendered x = do
  Foo/Bar/Qux.md -> [[Qux]], [[Bar/Qux]], [[Foo/Bar/Qux]]
 
  All possible combinations of Wikilink type use is automatically included.
+
+ if `indexIsSpecial` is True and the route is `Foo/Bar/index.md` then we ignore
+ the `/index.md` part when calculating wiki links.
 -}
-allowedWikiLinks :: (HasCallStack) => NonEmpty Slug -> NonEmpty (WikiLinkType, WikiLink)
-allowedWikiLinks slugs =
+allowedWikiLinks :: (HasCallStack) => Bool -> NonEmpty Slug -> NonEmpty (WikiLinkType, WikiLink)
+allowedWikiLinks indexIsSpecial slugs' =
   let wls = WikiLink <$> tailsNE slugs
       typs :: NonEmpty WikiLinkType = NE.fromList universe
    in liftM2 (,) typs wls
   where
+    slugs = if indexIsSpecial && last slugs' == "index" then NE.fromList . init $ slugs' else slugs'
     tailsNE =
       NE.fromList . mapMaybe nonEmpty . tails . toList
 
