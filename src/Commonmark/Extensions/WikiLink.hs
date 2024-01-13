@@ -154,7 +154,7 @@ wikiLinkInlineRendered x = do
 
  All possible combinations of Wikilink type use is automatically included.
 -}
-allowedWikiLinks :: HasCallStack => NonEmpty Slug -> NonEmpty (WikiLinkType, WikiLink)
+allowedWikiLinks :: (HasCallStack) => NonEmpty Slug -> NonEmpty (WikiLinkType, WikiLink)
 allowedWikiLinks slugs =
   let wls = WikiLink <$> tailsNE slugs
       typs :: NonEmpty WikiLinkType = NE.fromList universe
@@ -248,7 +248,7 @@ wikilinkSpec =
       replicateM_ 2 $ CT.symbol ']'
       return $ wikilink typ wl (fmap CM.str title)
     satisfyNoneOf toks =
-      CT.satisfyTok $ \t -> not $ or $ toks <&> \tok -> tok t
+      CT.satisfyTok $ \t -> not $ any (\tok -> tok t) toks
     isAnchor =
       isSymbol '#'
     isPipe =
