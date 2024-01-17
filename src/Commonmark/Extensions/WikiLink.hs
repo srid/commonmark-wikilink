@@ -279,8 +279,10 @@ plainify = W.query $ \case
   -- human-readable representation)
   (mkWikiLinkFromInline -> Just (wl, customText)) ->
     if null customText
-      then show wl -- We will display raw wikilink; ideally, though, we want to display the title.
-      else plainify customText
+      then -- We will display raw wikilink; ideally, though, we want to display the title.
+        show wl
+      else -- Because `W.query` will walk the child nodes once again, so we don't have to do anything.
+        ""
   -- Ignore the rest of AST nodes, as they are recursively defined in terms of
   -- `Inline` which `W.query` will traverse again.
   _ -> ""
