@@ -17,3 +17,7 @@ fmt:
 # Run ghcid -- auto-recompile and run `main` function
 run:
     ghcid -c "cabal repl" --warnings
+
+# Run tests (with auto-reload / recompile)
+test:
+    ghcid -c "cabal repl test:test --flags=ghcid" --warnings -T :main

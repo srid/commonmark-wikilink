@@ -97,6 +97,7 @@ test-suite test
   build-depends:
     , hspec
     , relude
+    , commonmark-simple
 
   if flag(ghcid)
     hs-source-dirs: src
