@@ -15,6 +15,7 @@
         inputs.haskell-flake.flakeModule
         inputs.treefmt-nix.flakeModule
       ];
+      flake.nixci.default.root.dir = ".";
       perSystem = { self', system, lib, config, pkgs, ... }: {
         # Our only Haskell project. You can have multiple projects, but this template
         # has only one.
