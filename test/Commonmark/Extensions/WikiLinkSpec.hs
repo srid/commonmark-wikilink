@@ -30,11 +30,14 @@ spec = do
         plainify <$> parseMdPara1 "Hello" `shouldBe` Right "Hello"
       it "with space" $ do
         plainify <$> parseMdPara1 "Hello World" `shouldBe` Right "Hello World"
-      -- FIXME: This should work!
-      -- it "with link" $ do
-      -- plainify <$> parseMdPara1 "[Hello](https://example.com)" `shouldBe` Right "Hello"
+      -- FIXME
+      xit "with link" $ do
+        plainify <$> parseMdPara1 "[Hello](https://example.com)" `shouldBe` Right "Hello"
       it "with wikilink" $ do
         plainify <$> parseMdPara1 "[[World]]" `shouldBe` Right "[[World]]"
+      -- FIXME
+      xit "with footnote" $ do
+        plainify <$> parseMdPara1 "Hello[^1] World.\n\n[^1]: Some footnote." `shouldBe` Right "Hello World."
 
 -- | Parse Markdown with our wikilink parser enabled
 parseMd :: Text -> Either Text Pandoc
