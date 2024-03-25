@@ -263,7 +263,15 @@ wikilinkSpec =
  TODO: extend on top of plainify from heist-extra
 -}
 plainify :: [B.Inline] -> Text
-plainify = W.query $ \case
+plainify = W.query plainify' . W.walk (mapMaybe removeInlineNotes)
+  where
+    removeInlineNotes :: B.Inline -> Maybe B.Inline
+    removeInlineNotes = \case
+      B.Note {} -> Nothing
+      a -> Just a
+
+plainify' :: [B.Inline] -> Text
+plainify' = W.query $ \case
   B.Str x -> x
   B.Code _attr x -> x
   B.Space -> " "
