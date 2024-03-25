@@ -263,33 +263,34 @@ wikilinkSpec =
  TODO: extend on top of plainify from heist-extra
 -}
 plainify :: [B.Inline] -> Text
-plainify = W.query doPlainify . W.walk (mapMaybe removeInlineNotes)
+plainify = W.query plainify' . W.walk (mapMaybe removeInlineNotes)
   where
     removeInlineNotes :: B.Inline -> Maybe B.Inline
     removeInlineNotes = \case
       B.Note {} -> Nothing
       a -> Just a
 
-    doPlainify = \case
-      B.Str x -> x
-      B.Code _attr x -> x
-      B.Space -> " "
-      B.SoftBreak -> " "
-      B.LineBreak -> " "
-      -- TODO: if fmt is html, we should strip the html tags
-      B.RawInline _fmt s -> s
-      -- Ignore "wrapper" inlines like span.
-      B.Span _ _ -> ""
-      -- TODO: How to wrap math stuff here?
-      B.Math _mathTyp s -> s
-      -- Wiki-links must be displayed using its show instance (which returns its
-      -- human-readable representation)
-      (mkWikiLinkFromInline -> Just (wl, customText)) ->
-        if null customText
-          then -- We will display raw wikilink; ideally, though, we want to display the title.
-            show wl
-          else -- Because `W.query` will walk the child nodes once again, so we don't have to do anything.
-            ""
-      -- Ignore the rest of AST nodes, as they are recursively defined in terms of
-      -- `Inline` which `W.query` will traverse again.
-      _ -> ""
+plainify' :: [B.Inline] -> Text
+plainify' = W.query $ \case
+  B.Str x -> x
+  B.Code _attr x -> x
+  B.Space -> " "
+  B.SoftBreak -> " "
+  B.LineBreak -> " "
+  -- TODO: if fmt is html, we should strip the html tags
+  B.RawInline _fmt s -> s
+  -- Ignore "wrapper" inlines like span.
+  B.Span _ _ -> ""
+  -- TODO: How to wrap math stuff here?
+  B.Math _mathTyp s -> s
+  -- Wiki-links must be displayed using its show instance (which returns its
+  -- human-readable representation)
+  (mkWikiLinkFromInline -> Just (wl, customText)) ->
+    if null customText
+      then -- We will display raw wikilink; ideally, though, we want to display the title.
+        show wl
+      else -- Because `W.query` will walk the child nodes once again, so we don't have to do anything.
+        ""
+  -- Ignore the rest of AST nodes, as they are recursively defined in terms of
+  -- `Inline` which `W.query` will traverse again.
+  _ -> ""
