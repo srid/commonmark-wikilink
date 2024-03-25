@@ -38,7 +38,7 @@ spec = do
 
 -- | Parse Markdown with our wikilink parser enabled
 parseMd :: Text -> Either Text Pandoc
-parseMd = fmap snd . parseMarkdownWithFrontMatter @Text wikilinkSpec "<fp>"
+parseMd = fmap snd . parseMarkdownWithFrontMatter @Text (fullMarkdownSpec <> wikilinkSpec) "<fp>"
 
 -- | Like `parseMd` but get just the first paragraph
 parseMdPara1 :: Text -> Either Text [Inline]
