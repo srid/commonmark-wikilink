@@ -25,3 +25,12 @@ spec = do
                   ]
               ]
       res `shouldBe` Right expected
+    describe "plainify" $ do
+      it "basic" $ do
+        plainify [Str "Hello"] `shouldBe` "Hello"
+      it "with space" $ do
+        plainify [Str "Hello", Space, Str "World"] `shouldBe` "Hello World"
+      it "with link" $ do
+        plainify [Link ("", [], []) [Str "Hello"] ("World", "")] `shouldBe` "Hello"
+      it "with wikilink" $ do
+        plainify [Link ("", [], [("data-wikilink-type", "WikiLinkNormal")]) [] ("World", "")] `shouldBe` "[[World]]"
