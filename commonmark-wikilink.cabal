@@ -95,9 +95,9 @@ test-suite test
   hs-source-dirs: test
   main-is:        Spec.hs
   build-depends:
+    , commonmark-simple
     , hspec
     , relude
-    , commonmark-simple
 
   if flag(ghcid)
     hs-source-dirs: src
