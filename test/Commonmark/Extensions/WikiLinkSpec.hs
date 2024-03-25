@@ -35,8 +35,7 @@ spec = do
         plainify <$> parseMdPara1 "[Hello](https://example.com)" `shouldBe` Right "Hello"
       it "with wikilink" $ do
         plainify <$> parseMdPara1 "[[World]]" `shouldBe` Right "[[World]]"
-      -- FIXME
-      xit "with footnote" $ do
+      it "with footnote" $ do
         plainify <$> parseMdPara1 "Hello[^1] World.\n\n[^1]: Some footnote." `shouldBe` Right "Hello World."
 
 -- | Parse Markdown with our wikilink parser enabled
