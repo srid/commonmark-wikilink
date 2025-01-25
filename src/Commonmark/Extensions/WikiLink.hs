@@ -263,12 +263,18 @@ wikilinkSpec =
  TODO: extend on top of plainify from heist-extra
 -}
 plainify :: [B.Inline] -> Text
-plainify = W.query plainify' . W.walk (mapMaybe removeInlineNotes)
+plainify = plainify' . W.walk (concatMap preprocess)
   where
-    removeInlineNotes :: B.Inline -> Maybe B.Inline
-    removeInlineNotes = \case
-      B.Note {} -> Nothing
-      a -> Just a
+    preprocess :: B.Inline -> [B.Inline]
+    preprocess = \case
+      -- Remove footnotes
+      B.Note {} -> []
+      -- Expand quotes (W.query can't deal with them without repetition)
+      B.Quoted qt x ->
+        case qt of
+          B.SingleQuote -> [B.Str "‘"] <> x <> [B.Str "’"]
+          B.DoubleQuote -> [B.Str "“"] <> x <> [B.Str "”"]
+      a -> one a
 
 plainify' :: [B.Inline] -> Text
 plainify' = W.query $ \case
@@ -277,6 +283,11 @@ plainify' = W.query $ \case
   B.Space -> " "
   B.SoftBreak -> " "
   B.LineBreak -> " "
+  B.Quoted qt x ->
+    let s = plainify' x
+     in case qt of
+          B.SingleQuote -> "'" <> s <> "'"
+          B.DoubleQuote -> "\"" <> s <> "\""
   -- TODO: if fmt is html, we should strip the html tags
   B.RawInline _fmt s -> s
   -- Ignore "wrapper" inlines like span.
