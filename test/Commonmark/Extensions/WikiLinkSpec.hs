@@ -39,6 +39,8 @@ spec = do
         plainify <$> parseMdPara1 "Hello[^1] World.\n\n[^1]: Some footnote." `shouldBe` Right "Hello World."
       it "with quotes" $ do
         plainify <$> parseMdPara1 "Foo \"Bar\" - MySite" `shouldBe` Right "Foo \"Bar\" - MySite"
+      it "with emoji" $ do
+        plainify <$> parseMdPara1 "Emoji :writing_hand:" `shouldBe` Right "Emoji ✍️"
 
 -- | Parse Markdown with our wikilink parser enabled
 parseMd :: Text -> Either Text Pandoc
