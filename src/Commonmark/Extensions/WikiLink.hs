@@ -272,8 +272,8 @@ plainify = plainify' . W.walk (concatMap preprocess)
       -- Expand quotes (W.query can't deal with them without repetition)
       B.Quoted qt x ->
         case qt of
-          B.SingleQuote -> [B.Str "'"] <> x <> [B.Str "'"]
-          B.DoubleQuote -> [B.Str "\""] <> x <> [B.Str "\""]
+          B.SingleQuote -> [B.Str "‘"] <> x <> [B.Str "’"]
+          B.DoubleQuote -> [B.Str "“"] <> x <> [B.Str "”"]
       a -> one a
 
 plainify' :: [B.Inline] -> Text
