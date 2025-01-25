@@ -1,3 +1,4 @@
+# https://omnix.page/om/ci.html
 name: "CI"
 on:
   push:
@@ -6,19 +7,19 @@ on:
   pull_request:
 jobs:
   configure:
-    runs-on: self-hosted
+    runs-on: x86_64-linux
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
      - uses: actions/checkout@v4
      - id: set-matrix
-       run: echo "matrix=$(nixci gh-matrix --systems=aarch64-linux,aarch64-darwin | jq -c .)" >> $GITHUB_OUTPUT
+       run: echo "matrix=$(om ci gh-matrix --systems=x86_64-linux,aarch64-darwin | jq -c .)" >> $GITHUB_OUTPUT
   nix:
-    runs-on: self-hosted
+    runs-on: ${{ matrix.system }}
     needs: configure
     strategy:
       matrix: ${{ fromJson(needs.configure.outputs.matrix) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - run: nixci build --systems "github:nix-systems/${{ matrix.system }}" ".#default.${{ matrix.subflake }}"
+      - run: om ci run --systems "${{ matrix.system }}" ".#default.${{ matrix.subflake }}"
