@@ -263,7 +263,7 @@ wikilinkSpec =
  TODO: extend on top of plainify from heist-extra
 -}
 plainify :: [B.Inline] -> Text
-plainify = plainify' . W.walk (concatMap preprocess)
+plainify = plainify' . W.walk (deleteConsequentSpaces True . concatMap preprocess)
   where
     preprocess :: B.Inline -> [B.Inline]
     preprocess = \case
@@ -274,7 +274,17 @@ plainify = plainify' . W.walk (concatMap preprocess)
         case qt of
           B.SingleQuote -> [B.Str "‘"] <> x <> [B.Str "’"]
           B.DoubleQuote -> [B.Str "“"] <> x <> [B.Str "”"]
+      -- Erase strikeouts
+      B.Strikeout _ -> []
       a -> one a
+    -- The strikeout erasing can lead to subsequent B.Space's; remove them
+    deleteConsequentSpaces :: Bool -> [B.Inline] -> [B.Inline]
+    deleteConsequentSpaces keepFirst = \case
+      B.Space : B.Space : xs ->
+        let rest = deleteConsequentSpaces False xs
+         in if keepFirst then B.Space : rest else rest
+      x : xs -> x : deleteConsequentSpaces keepFirst xs
+      [] -> []
 
 plainify' :: [B.Inline] -> Text
 plainify' = W.query $ \case
