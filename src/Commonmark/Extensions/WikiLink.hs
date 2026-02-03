@@ -16,6 +16,7 @@ module Commonmark.Extensions.WikiLink (
   -- * Converting wikilinks
   wikilinkInline,
   wikiLinkInlineRendered,
+  wikilinkUrl,
 
   -- * Commonmark parser spec
   wikilinkSpec,
