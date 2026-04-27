@@ -29,6 +29,7 @@ module Commonmark.Extensions.WikiLink (
 ) where
 
 import Commonmark qualified as CM
+import Commonmark.Entity qualified as CE
 import Commonmark.Pandoc qualified as CP
 import Commonmark.TokParsers qualified as CT
 import Control.Monad (liftM2)
@@ -132,8 +133,12 @@ wikilinkUrl :: WikiLink -> Text
 wikilinkUrl =
   T.intercalate "/" . fmap Slug.unSlug . toList . unWikiLink
 
+wikilinkLinkUrl :: WikiLink -> Text
+wikilinkLinkUrl =
+  T.intercalate "/" . fmap Slug.encodeSlug . toList . unWikiLink
+
 wikilinkInline :: WikiLinkType -> WikiLink -> B.Inlines -> B.Inlines
-wikilinkInline typ wl = B.linkWith attrs (wikilinkUrl wl) ""
+wikilinkInline typ wl = B.linkWith attrs (wikilinkLinkUrl wl) ""
   where
     attrs = ("", [], [(htmlAttr, show typ)])
 
@@ -229,24 +234,23 @@ wikilinkSpec =
       replicateM_ 2 $ CT.symbol '['
       P.notFollowedBy (CT.symbol '[')
       url <-
-        CM.untokenize <$> many (satisfyNoneOf [isPipe, isAnchor, isClose])
+        entityAwareText [isPipe, isAnchor, isClose]
       wl <- mkWikiLinkFromUrl url
       -- We ignore the anchor until https://github.com/srid/emanote/discussions/105
       _anchor <-
         M.optional $
-          CM.untokenize
-            <$> ( CT.symbol '#'
-                    *> many (satisfyNoneOf [isPipe, isClose])
-                )
+          CT.symbol '#'
+            *> entityAwareText [isPipe, isClose]
       title <-
         M.optional $
           -- TODO: Should parse as inline so link text can be formatted?
-          CM.untokenize
-            <$> ( CT.symbol '|'
-                    *> many (satisfyNoneOf [isClose])
-                )
+          CT.symbol '|'
+            *> entityAwareText [isClose]
       replicateM_ 2 $ CT.symbol ']'
       return $ wikilink typ wl (fmap CM.str title)
+    entityAwareText toks =
+      CM.untokenize
+        <$> many (P.try CE.pEntity <|> satisfyNoneOf toks)
     satisfyNoneOf toks =
       CT.satisfyTok $ \t -> not $ any (\tok -> tok t) toks
     isAnchor =
