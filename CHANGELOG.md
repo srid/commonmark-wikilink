@@ -1,4 +1,8 @@
 
+## Unreleased
+
+- Decode HTML entities in wikilink custom titles while preserving entity escapes in references as link text, not anchor delimiters ([#9](https://github.com/srid/commonmark-wikilink/pull/9)).
+
 ## 0.2.0.0
 
 - Fixes
