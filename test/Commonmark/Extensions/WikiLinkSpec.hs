@@ -25,6 +25,30 @@ spec = do
                   ]
               ]
       res `shouldBe` Right expected
+    it "decodes HTML entities in custom titles" $ do
+      parseMdPara1 "[[category-theory-spivak-2014|Spivak&nbsp;(2014)]]"
+        `shouldBe` Right
+          [ Link
+              ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+              [Str "Spivak\160(2014)"]
+              ("category-theory-spivak-2014", "")
+          ]
+    it "decodes numeric HTML entities in custom titles" $ do
+      parseMdPara1 "[[paper|Section &#35;1]]"
+        `shouldBe` Right
+          [ Link
+              ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+              [Str "Section", Space, Str "#1"]
+              ("paper", "")
+          ]
+    it "keeps numeric HTML entities in references distinct from anchors" $ do
+      parseMdPara1 "[[chapter-&#35;1|number]]"
+        `shouldBe` Right
+          [ Link
+              ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+              [Str "number"]
+              ("chapter-%231", "")
+          ]
     describe "plainify" $ do
       it "basic" $ do
         plainify <$> parseMdPara1 "Hello" `shouldBe` Right "Hello"
