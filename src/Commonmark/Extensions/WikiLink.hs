@@ -313,9 +313,10 @@ plainify' = W.query $ \case
   -- with custom text, we return "" because W.query will walk the child
   -- nodes and pick the title up there.
   (mkWikiLinkFromInline -> Just (wl, manc, customText)) ->
-    if null customText
-      then "[[" <> wikilinkUrl wl <> anchorSuffix manc <> "]]"
-      else ""
+    let target = wikilinkUrl wl <> anchorSuffix manc
+     in if null customText
+          then "[[" <> target <> "]]"
+          else ""
   -- Ignore the rest of AST nodes, as they are recursively defined in terms of
   -- `Inline` which `W.query` will traverse again.
   _ -> ""
