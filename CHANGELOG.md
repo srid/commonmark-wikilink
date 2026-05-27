@@ -1,6 +1,8 @@
 
 ## Unreleased
 
+- Preserve `#anchor` in wikilinks so `[[note#heading]]` renders as `note#heading` instead of dropping the fragment ([srid/emanote#105](https://github.com/srid/emanote/discussions/105)).
+    - **Breaking**: `wikilinkInline` now takes `Maybe Anchor`; `mkWikiLinkFromInline` returns `(WikiLink, Maybe Anchor, [Inline])`.
 - Decode HTML entities in wikilink custom titles while preserving entity escapes in references as link text, not anchor delimiters ([#9](https://github.com/srid/commonmark-wikilink/pull/9)).
 
 ## 0.2.0.0

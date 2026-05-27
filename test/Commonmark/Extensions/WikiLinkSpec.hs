@@ -49,6 +49,55 @@ spec = do
               [Str "number"]
               ("chapter-%231", "")
           ]
+    describe "anchors in wikilinks" $ do
+      it "preserves anchor in cross-file heading link" $ do
+        parseMdPara1 "[[note#heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                []
+                ("note#heading", "")
+            ]
+      it "preserves anchor with custom title" $ do
+        parseMdPara1 "[[note#heading|See heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                [Str "See", Space, Str "heading"]
+                ("note#heading", "")
+            ]
+      it "preserves anchor in embed link" $ do
+        parseMdPara1 "![[note#heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkEmbed")])
+                []
+                ("note#heading", "")
+            ]
+      it "preserves anchor in branch link" $ do
+        parseMdPara1 "[[note#heading]]#"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkBranch")])
+                []
+                ("note#heading", "")
+            ]
+      it "preserves anchor in tag link" $ do
+        parseMdPara1 "#[[note#heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkTag")])
+                []
+                ("note#heading", "")
+            ]
+      it "parses anchor with spaces" $ do
+        parseMdPara1 "[[note#hello world]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                []
+                ("note#hello world", "")
+            ]
     describe "plainify" $ do
       it "basic" $ do
         plainify <$> parseMdPara1 "Hello" `shouldBe` Right "Hello"
@@ -59,6 +108,10 @@ spec = do
         plainify <$> parseMdPara1 "[Hello](https://example.com)" `shouldBe` Right "Hello"
       it "with wikilink" $ do
         plainify <$> parseMdPara1 "[[World]]" `shouldBe` Right "[[World]]"
+      it "with wikilink anchor" $ do
+        plainify <$> parseMdPara1 "[[note#heading]]" `shouldBe` Right "[[note#heading]]"
+      it "with wikilink anchor and custom title yields the custom text" $ do
+        plainify <$> parseMdPara1 "[[note#heading|See heading]]" `shouldBe` Right "See heading"
       it "with footnote" $ do
         plainify <$> parseMdPara1 "Hello[^1] World.\n\n[^1]: Some footnote." `shouldBe` Right "Hello World."
       it "with quotes" $ do
