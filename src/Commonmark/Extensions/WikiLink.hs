@@ -8,6 +8,7 @@ module Commonmark.Extensions.WikiLink (
   -- * Parsing wikilinks
   mkWikiLinkFromSlugs,
   mkWikiLinkFromInline,
+  parseWikiLinkUrl,
   delineateLink,
 
   -- * Wikilink candidates
@@ -81,6 +82,20 @@ mkWikiLinkFromInline inl = do
   B.Link (_id, _class, otherAttrs) is (url, tit) <- pure inl
   (Left (_, wl), manchor) <- delineateLink (otherAttrs <> one ("title", tit)) url
   pure (wl, manchor, is)
+
+{- | Parse a raw user-supplied URL string (e.g. @"foo/bar#section"@) into
+a 'WikiLink' plus optional 'Anchor'. Mirrors what 'delineateLink' does
+for Pandoc 'B.Link' inputs but doesn't require the wikilink-type
+attribute — for non-Markdown callers (MCP tools, CLI, JSON APIs) that
+just receive the inside-the-brackets text and need the same anchor
+semantics as the renderer.
+-}
+parseWikiLinkUrl :: Text -> Maybe (WikiLink, Maybe Anchor)
+parseWikiLinkUrl raw = do
+  let (wlPart, manchor) = dropUrlAnchor raw
+  guard $ not $ T.null wlPart
+  wl <- mkWikiLinkFromUrl wlPart
+  pure (wl, manchor)
 
 -- | An URL anchor without the '#'
 newtype Anchor = Anchor Text

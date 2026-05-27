@@ -98,6 +98,19 @@ spec = do
                 []
                 ("note#hello world", "")
             ]
+    describe "parseWikiLinkUrl" $ do
+      let url s = bimap show show <$> parseWikiLinkUrl s
+      it "rejects an empty string" $ do
+        parseWikiLinkUrl "" `shouldBe` Nothing
+      it "parses a single-segment target with no anchor" $ do
+        url "note" `shouldBe` Just ("[[note]]", "Nothing")
+      it "parses a slash-separated target with no anchor" $ do
+        url "foo/bar" `shouldBe` Just ("[[foo/bar]]", "Nothing")
+      it "splits target from anchor on the first #" $ do
+        url "note#heading"
+          `shouldBe` Just ("[[note]]", "Just \"heading\"")
+      it "rejects an anchor-only URL (anchor with empty wikilink target)" $ do
+        parseWikiLinkUrl "#heading" `shouldBe` Nothing
     describe "plainify" $ do
       it "basic" $ do
         plainify <$> parseMdPara1 "Hello" `shouldBe` Right "Hello"
