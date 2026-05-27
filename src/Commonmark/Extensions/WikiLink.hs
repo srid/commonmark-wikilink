@@ -8,6 +8,7 @@ module Commonmark.Extensions.WikiLink (
   -- * Parsing wikilinks
   mkWikiLinkFromSlugs,
   mkWikiLinkFromInline,
+  parseWikiLinkUrl,
   delineateLink,
 
   -- * Wikilink candidates
@@ -23,6 +24,7 @@ module Commonmark.Extensions.WikiLink (
   -- * Anchors in URLs
   Anchor,
   anchorSuffix,
+  dropUrlAnchor,
 
   -- * Pandoc helper
   plainify,
@@ -75,11 +77,25 @@ mkWikiLinkFromUrl s = do
   slugs <- maybe empty pure $ nonEmpty $ Slug.decodeSlug <$> T.splitOn "/" s
   pure $ WikiLink slugs
 
-mkWikiLinkFromInline :: B.Inline -> Maybe (WikiLink, [B.Inline])
+mkWikiLinkFromInline :: B.Inline -> Maybe (WikiLink, Maybe Anchor, [B.Inline])
 mkWikiLinkFromInline inl = do
   B.Link (_id, _class, otherAttrs) is (url, tit) <- pure inl
-  (Left (_, wl), _manchor) <- delineateLink (otherAttrs <> one ("title", tit)) url
-  pure (wl, is)
+  (Left (_, wl), manchor) <- delineateLink (otherAttrs <> one ("title", tit)) url
+  pure (wl, manchor, is)
+
+{- | Parse a raw user-supplied URL string (e.g. @"foo/bar#section"@) into
+a 'WikiLink' plus optional 'Anchor'. Mirrors what 'delineateLink' does
+for Pandoc 'B.Link' inputs but doesn't require the wikilink-type
+attribute — for non-Markdown callers (MCP tools, CLI, JSON APIs) that
+just receive the inside-the-brackets text and need the same anchor
+semantics as the renderer.
+-}
+parseWikiLinkUrl :: Text -> Maybe (WikiLink, Maybe Anchor)
+parseWikiLinkUrl raw = do
+  let (wlPart, manchor) = dropUrlAnchor raw
+  guard $ not $ T.null wlPart
+  wl <- mkWikiLinkFromUrl wlPart
+  pure (wl, manchor)
 
 -- | An URL anchor without the '#'
 newtype Anchor = Anchor Text
@@ -109,7 +125,6 @@ delineateLink (Map.fromList -> attrs) url = do
   where
     wikiLink = do
       wlType :: WikiLinkType <- readMaybe . toString <=< Map.lookup htmlAttr $ attrs
-      -- Ignore anchors until https://github.com/srid/emanote/discussions/105
       let (s, manc) = dropUrlAnchor url
       wl <- mkWikiLinkFromUrl s
       pure (Left (wlType, wl), manc)
@@ -137,21 +152,22 @@ wikilinkLinkUrl :: WikiLink -> Text
 wikilinkLinkUrl =
   T.intercalate "/" . fmap Slug.encodeSlug . toList . unWikiLink
 
-wikilinkInline :: WikiLinkType -> WikiLink -> B.Inlines -> B.Inlines
-wikilinkInline typ wl = B.linkWith attrs (wikilinkLinkUrl wl) ""
+wikilinkInline :: WikiLinkType -> WikiLink -> Maybe Anchor -> B.Inlines -> B.Inlines
+wikilinkInline typ wl manc = B.linkWith attrs (wikilinkLinkUrl wl <> anchorSuffix manc) ""
   where
     attrs = ("", [], [(htmlAttr, show typ)])
 
 wikiLinkInlineRendered :: B.Inline -> Maybe Text
 wikiLinkInlineRendered x = do
-  (wl, inl) <- mkWikiLinkFromInline x
+  (wl, manc, inl) <- mkWikiLinkFromInline x
+  let target = wikilinkUrl wl <> anchorSuffix manc
   pure $ case nonEmpty inl of
-    Nothing -> show wl
+    Nothing -> "[[" <> target <> "]]"
     Just _ ->
       let inlStr = plainify inl
-       in if inlStr == wikilinkUrl wl
-            then show wl
-            else "[[" <> wikilinkUrl wl <> "|" <> plainify inl <> "]]"
+       in if inlStr == target
+            then "[[" <> target <> "]]"
+            else "[[" <> target <> "|" <> plainify inl <> "]]"
 
 {- | Return the various ways to link to a route (ignoring ext)
 
@@ -201,11 +217,11 @@ htmlAttr :: Text
 htmlAttr = "data-wikilink-type"
 
 class HasWikiLink il where
-  wikilink :: WikiLinkType -> WikiLink -> Maybe il -> il
+  wikilink :: WikiLinkType -> WikiLink -> Maybe Anchor -> Maybe il -> il
 
 instance HasWikiLink (CP.Cm b B.Inlines) where
-  wikilink typ wl il =
-    CP.Cm $ wikilinkInline typ wl $ maybe mempty CP.unCm il
+  wikilink typ wl manc il =
+    CP.Cm $ wikilinkInline typ wl manc $ maybe mempty CP.unCm il
 
 {- | Like `Commonmark.Extensions.Wikilinks.wikilinkSpec` but Zettelkasten-friendly.
 
@@ -236,18 +252,17 @@ wikilinkSpec =
       url <-
         entityAwareText [isPipe, isAnchor, isClose]
       wl <- mkWikiLinkFromUrl url
-      -- We ignore the anchor until https://github.com/srid/emanote/discussions/105
-      _anchor <-
+      manchor <-
         M.optional $
           CT.symbol '#'
-            *> entityAwareText [isPipe, isClose]
+            *> (Anchor <$> entityAwareText [isPipe, isClose])
       title <-
         M.optional $
           -- TODO: Should parse as inline so link text can be formatted?
           CT.symbol '|'
             *> entityAwareText [isClose]
       replicateM_ 2 $ CT.symbol ']'
-      return $ wikilink typ wl (fmap CM.str title)
+      return $ wikilink typ wl manchor (fmap CM.str title)
     entityAwareText toks =
       CM.untokenize
         <$> many (P.try CE.pEntity <|> satisfyNoneOf toks)
@@ -308,14 +323,15 @@ plainify' = W.query $ \case
   B.Span _ _ -> ""
   -- TODO: How to wrap math stuff here?
   B.Math _mathTyp s -> s
-  -- Wiki-links must be displayed using its show instance (which returns its
-  -- human-readable representation)
-  (mkWikiLinkFromInline -> Just (wl, customText)) ->
-    if null customText
-      then -- We will display raw wikilink; ideally, though, we want to display the title.
-        show wl
-      else -- Because `W.query` will walk the child nodes once again, so we don't have to do anything.
-        ""
+  -- Wiki-links must be displayed in their source-equivalent form so a
+  -- "[[note#heading]]" without inner text round-trips to that same string;
+  -- with custom text, we return "" because W.query will walk the child
+  -- nodes and pick the title up there.
+  (mkWikiLinkFromInline -> Just (wl, manc, customText)) ->
+    let target = wikilinkUrl wl <> anchorSuffix manc
+     in if null customText
+          then "[[" <> target <> "]]"
+          else ""
   -- Ignore the rest of AST nodes, as they are recursively defined in terms of
   -- `Inline` which `W.query` will traverse again.
   _ -> ""

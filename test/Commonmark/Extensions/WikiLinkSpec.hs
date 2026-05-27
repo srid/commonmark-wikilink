@@ -49,6 +49,83 @@ spec = do
               [Str "number"]
               ("chapter-%231", "")
           ]
+    describe "anchors in wikilinks" $ do
+      it "preserves anchor in cross-file heading link" $ do
+        parseMdPara1 "[[note#heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                []
+                ("note#heading", "")
+            ]
+      it "preserves anchor with custom title" $ do
+        parseMdPara1 "[[note#heading|See heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                [Str "See", Space, Str "heading"]
+                ("note#heading", "")
+            ]
+      it "preserves anchor in embed link" $ do
+        parseMdPara1 "![[note#heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkEmbed")])
+                []
+                ("note#heading", "")
+            ]
+      it "preserves anchor in branch link" $ do
+        parseMdPara1 "[[note#heading]]#"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkBranch")])
+                []
+                ("note#heading", "")
+            ]
+      it "preserves anchor in tag link" $ do
+        parseMdPara1 "#[[note#heading]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkTag")])
+                []
+                ("note#heading", "")
+            ]
+      it "parses anchor with spaces" $ do
+        parseMdPara1 "[[note#hello world]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                []
+                ("note#hello world", "")
+            ]
+      -- The link syntax for Obsidian block references (`[[note#^blockid]]`,
+      -- per srid/emanote#105) is just an anchor that starts with a caret. The
+      -- block-ID *definition* syntax (a trailing `^blockid` marker on a
+      -- paragraph or list item) is a separate, non-CommonMark feature and
+      -- belongs to a downstream renderer — not to this parser.
+      it "preserves Obsidian-style ^blockid anchor verbatim" $ do
+        parseMdPara1 "[[note#^565948]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                []
+                ("note#^565948", "")
+            ]
+    describe "parseWikiLinkUrl" $ do
+      let url s = do
+            (wl, manc) <- parseWikiLinkUrl s
+            pure (show @Text wl, show @Text manc)
+      it "rejects an empty string" $ do
+        parseWikiLinkUrl "" `shouldBe` Nothing
+      it "parses a single-segment target with no anchor" $ do
+        url "note" `shouldBe` Just ("[[note]]", "Nothing")
+      it "parses a slash-separated target with no anchor" $ do
+        url "foo/bar" `shouldBe` Just ("[[foo/bar]]", "Nothing")
+      it "splits target from anchor on the first #" $ do
+        url "note#heading"
+          `shouldBe` Just ("[[note]]", "Just \"heading\"")
+      it "rejects an anchor-only URL (anchor with empty wikilink target)" $ do
+        parseWikiLinkUrl "#heading" `shouldBe` Nothing
     describe "plainify" $ do
       it "basic" $ do
         plainify <$> parseMdPara1 "Hello" `shouldBe` Right "Hello"
@@ -59,6 +136,10 @@ spec = do
         plainify <$> parseMdPara1 "[Hello](https://example.com)" `shouldBe` Right "Hello"
       it "with wikilink" $ do
         plainify <$> parseMdPara1 "[[World]]" `shouldBe` Right "[[World]]"
+      it "with wikilink anchor" $ do
+        plainify <$> parseMdPara1 "[[note#heading]]" `shouldBe` Right "[[note#heading]]"
+      it "with wikilink anchor and custom title yields the custom text" $ do
+        plainify <$> parseMdPara1 "[[note#heading|See heading]]" `shouldBe` Right "See heading"
       it "with footnote" $ do
         plainify <$> parseMdPara1 "Hello[^1] World.\n\n[^1]: Some footnote." `shouldBe` Right "Hello World."
       it "with quotes" $ do
