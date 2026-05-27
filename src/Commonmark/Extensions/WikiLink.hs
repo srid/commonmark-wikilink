@@ -23,6 +23,7 @@ module Commonmark.Extensions.WikiLink (
   -- * Anchors in URLs
   Anchor,
   anchorSuffix,
+  dropUrlAnchor,
 
   -- * Pandoc helper
   plainify,
