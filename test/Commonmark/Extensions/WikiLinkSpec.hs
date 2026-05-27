@@ -98,6 +98,19 @@ spec = do
                 []
                 ("note#hello world", "")
             ]
+      -- The link syntax for Obsidian block references (`[[note#^blockid]]`,
+      -- per srid/emanote#105) is just an anchor that starts with a caret. The
+      -- block-ID *definition* syntax (a trailing `^blockid` marker on a
+      -- paragraph or list item) is a separate, non-CommonMark feature and
+      -- belongs to a downstream renderer — not to this parser.
+      it "preserves Obsidian-style ^blockid anchor verbatim" $ do
+        parseMdPara1 "[[note#^565948]]"
+          `shouldBe` Right
+            [ Link
+                ("", [], [("data-wikilink-type", "WikiLinkNormal")])
+                []
+                ("note#^565948", "")
+            ]
     describe "parseWikiLinkUrl" $ do
       let url s = do
             (wl, manc) <- parseWikiLinkUrl s
