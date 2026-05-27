@@ -99,7 +99,9 @@ spec = do
                 ("note#hello world", "")
             ]
     describe "parseWikiLinkUrl" $ do
-      let url s = bimapF show show (parseWikiLinkUrl s)
+      let url s = do
+            (wl, manc) <- parseWikiLinkUrl s
+            pure (show @Text wl, show @Text manc)
       it "rejects an empty string" $ do
         parseWikiLinkUrl "" `shouldBe` Nothing
       it "parses a single-segment target with no anchor" $ do
