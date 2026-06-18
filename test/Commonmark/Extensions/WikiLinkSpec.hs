@@ -2,12 +2,19 @@ module Commonmark.Extensions.WikiLinkSpec where
 
 import Commonmark.Extensions.WikiLink
 import Commonmark.Simple
+import Data.List.NonEmpty qualified as NE
+import Network.URI.Slug qualified as Slug
 import Test.Hspec
 import Text.Pandoc.Definition
 
 spec :: Spec
 spec = do
   describe "commonmark-wikilink" $ do
+    it "wikilinkUrl" $ do
+      let decode s = fromMaybe (error "bad slug") $ Slug.decodeSlug s
+          slugs = decode "Foo" NE.:| [decode "Bar"]
+          wl = mkWikiLinkFromSlugs slugs
+      wikilinkUrl wl `shouldBe` "Foo/Bar"
     it "basic" $ do
       let res = snd <$> parseMarkdownWithFrontMatter @Text fullMarkdownSpec "<fp>" "Hello [[World]]."
           expected = Pandoc mempty [Para [Str "Hello", Space, Str "[[World]]."]]
